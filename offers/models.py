@@ -103,7 +103,7 @@ class Offer(models.Model):
     # Kto utworzył oferte
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Utworzył")
 
-    def update_total(self):
+    def update_total(self) -> None:
         """
         Przelicza sumę oferty na podstawie pozycji.
         """
@@ -118,7 +118,7 @@ class Offer(models.Model):
         # Używamy update_fields, żeby nie nadpisywać innych pól (optymalizacja)
         self.save(update_fields=['total_price'])
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.offer_number}"
 
     # Metoda pomocnicza do szablonu - kiedy wygasa?
@@ -127,22 +127,22 @@ class Offer(models.Model):
         return self.created_at.date() + timedelta(days=self.validity_days)
 
     @property
-    def css_class(self):
+    def css_class(self) -> str:
         return f"status-{self.status}"
 
     class Meta:
         ordering = ['-created_at']
         verbose_name = "Oferta"
         verbose_name_plural = "Baza Ofert"
-    def get_total_vat(self):
+    def get_total_vat(self) -> Decimal:
         """Oblicza kwotę samego podatku VAT (23%)"""
         return (self.total_price * Decimal('0.23')).quantize(Decimal('0.01'))
 
-    def get_total_gross(self):
+    def get_total_gross(self) -> Decimal:
         """Oblicza kwotę Brutto (Netto + VAT)"""
         return (self.total_price * Decimal('1.23')).quantize(Decimal('0.01'))
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         """Generuje sekwencyjny numer oferty X/MM/YYYY przed pierwszym zapisem."""
         if not self.offer_number:
             from django.utils import timezone
@@ -172,7 +172,7 @@ class Offer(models.Model):
 
         super().save(*args, **kwargs)
 
-    def submit_for_approval(self):
+    def submit_for_approval(self) -> tuple[bool, str]:
         """Przesyła ofertę do akceptacji."""
         if self.status == self.Status.DRAFT:
             self.status = self.Status.PENDING
@@ -180,7 +180,7 @@ class Offer(models.Model):
             return True, f"Oferta {self.offer_number} wysłana do akceptacji."
         return False, "Tylko szkic można wysłać do akceptacji."
 
-    def approve(self, user):
+    def approve(self, user: User) -> tuple[bool, str]:
         """Zatwierdza ofertę (wymagane uprawnienia superusera)."""
         if not user.is_superuser:
             return False, "Brak uprawnień (wymagany CEO)."
@@ -190,7 +190,7 @@ class Offer(models.Model):
             return True, "Oferta zatwierdzona! Można generować PDF."
         return False, "Zatwierdzić można tylko oczekującą ofertę."
 
-    def reject(self, reason):
+    def reject(self, reason: str) -> tuple[bool, str]:
         """Odrzuca ofertę wraz z podaniem powodu."""
         if reason:
             self.status = self.Status.REJECTED
@@ -199,13 +199,20 @@ class Offer(models.Model):
             return True, f"Oferta odrzucona. Powód: {reason}"
         return False, "Musisz podać powód odrzucenia!"
 
-    def return_to_draft(self):
+    def return_to_draft(self) -> tuple[bool, str]:
         """Cofa ofertę odrzuconą z powrotem do wersji roboczej."""
         if self.status == self.Status.REJECTED:
             self.status = self.Status.DRAFT
             self.save(update_fields=['status'])
             return True, "Oferta przywrócona do edycji."
         return False, "Nie można cofnąć do edycji."
+
+    def send_to_consultation(self) -> tuple[bool, str]:
+        if  self.status == self.Status.DRAFT:
+                self.status = self.Status.IN_CONSULTATION
+                self.save(update_fields=['status'])
+                return True, f"Oferta skierowana do konsultacji IT"
+        return False, f"Tylko szkic można skierować do konsultacji IT"
 
 class OfferItem(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name='items')
@@ -220,16 +227,16 @@ class OfferItem(models.Model):
                                        verbose_name="Cena katalogowa EUR")
 
     @property
-    def total_price(self):
+    def total_price(self) -> Decimal:
         return self.quantity * self.price_per_unit
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.description
 
 
 @receiver(post_save, sender=OfferItem)
 @receiver(post_delete, sender=OfferItem)
-def recalculate_offer_total(sender, instance, **kwargs):
+def recalculate_offer_total(sender, instance, **kwargs) -> None:
     offer = instance.offer
     offer.update_total()
 
@@ -238,7 +245,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name="Użytkownik")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Profil: {self.user.username}"
 
     class Meta:
@@ -247,13 +254,13 @@ class UserProfile(models.Model):
 
 
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
+def create_user_profile(sender, instance, created, **kwargs)-> None:
     if created:
         UserProfile.objects.create(user=instance)
 
 
 @receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
+def save_user_profile(sender, instance, **kwargs) -> None:
     if not hasattr(instance, 'profile'):
         UserProfile.objects.create(user=instance)
     instance.profile.save()

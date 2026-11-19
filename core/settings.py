@@ -1,49 +1,57 @@
 from pathlib import Path
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-IS_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ
-
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
+# ==============================================================================
+# 1. ŚCIEŻKI I BEZPIECZEŃSTWO (CORE & SECURITY)
+# ==============================================================================
+BASE_DIR = Path(__file__).resolve().parent.parent
+IS_PYTHONANYWHERE = 'PYTHONANYWHERE_DOMAIN' in os.environ
+
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-development-fallback-key-9f37c2a1-e8d9')
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 allowed_hosts_env = os.getenv('ALLOWED_HOSTS', '')
 if allowed_hosts_env:
     ALLOWED_HOSTS = allowed_hosts_env.split(',')
 else:
-    # Fallback dla PythonAnywhere, jeśli zapomnimy ustawić zmienną
     ALLOWED_HOSTS = ['jakub3011.pythonanywhere.com', 'localhost', '127.0.0.1']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-# Application definition
-
+# ==============================================================================
+# 2. APLIKACJE I MIDDLEWARE
+# ==============================================================================
 INSTALLED_APPS = [
-    'import_export',
-    'ckeditor',
+    # Motyw panelu admina (musi być przed django.contrib.admin)
     'jazzmin',
-    'offers.apps.OffersConfig',
+
+    # Wbudowane moduły Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Biblioteki zewnętrzne (Third-party)
+    'rest_framework',
+    'drf_spectacular',
+    'corsheaders',
+    'import_export',
+    'ckeditor',
+
+    # Nasze aplikacje biznesowe
+    'offers.apps.OffersConfig',
 ]
-IMPORT_EXPORT_USE_TRANSACTIONS = True
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,26 +62,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
-
-STATIC_URL = 'static/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Konfiguracja CKEditora
-CKEDITOR_CONFIGS = {
-    'default': {
-        'toolbar': 'Custom',
-        'toolbar_Custom': [
-            ['Bold', 'Italic', 'Underline'],
-            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
-            ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-            ['Link', 'Unlink'],
-            ['RemoveFormat', 'Source']
-        ],
-        'width': 'auto',
-    }
-}
+WSGI_APPLICATION = 'core.wsgi.application'
 
 TEMPLATES = [
     {
@@ -90,11 +79,12 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# ==============================================================================
+# 3. BAZA DANYCH (POSTGRESQL / SQLITE FALLBACK)
+# ==============================================================================
 USE_POSTGRES = os.environ.get('USE_POSTGRES', 'False').lower() in ('true', '1', 'yes')
+
 if USE_POSTGRES:
     DATABASES = {
         'default': {
@@ -108,52 +98,91 @@ if USE_POSTGRES:
     }
 else:
     DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ==============================================================================
+# 4. UWIERZYTELNIANIE I LOKALIZACJA
+# ==============================================================================
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+LANGUAGE_CODE = 'pl'
+TIME_ZONE = 'Europe/Warsaw'
+USE_I18N = True
+USE_TZ = True
+
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+
+
+# ==============================================================================
+# 5. PLIKI STATYCZNE I MEDIA
+# ==============================================================================
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# ==============================================================================
+# 6. KONFIGURACJA REST API, JWT & SWAGGER (Wersja 2.0)
+# ==============================================================================
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'System Ofertowania B2B API',
+    'DESCRIPTION': 'Nowoczesne REST API dla systemu CRM i Ofertowania (Wersja 2.0)',
+    'VERSION': '2.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+]
+
+
+# ==============================================================================
+# 7. NARZĘDZIA DODATKOWE (JAZZMIN, CKEDITOR, IMPORT-EXPORT)
+# ==============================================================================
+IMPORT_EXPORT_USE_TRANSACTIONS = True
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'Custom',
+        'toolbar_Custom': [
+            ['Bold', 'Italic', 'Underline'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+            ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
+            ['Link', 'Unlink'],
+            ['RemoveFormat', 'Source']
+        ],
+        'width': 'auto',
+    }
+}
 
 JAZZMIN_SETTINGS = {
     "site_title": "Panel Zarządzania",
