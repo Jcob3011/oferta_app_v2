@@ -1,6 +1,8 @@
 import {useState, useEffect} from "react";
 import type {Offer} from "./types/offer.ts";
 import {fetchOffers, loginUser} from "./api/offersApi.ts";
+import {OfferForm} from "./components/OfferForm.tsx";
+import {CrmPanel} from "./components/CrmPanel.tsx";
 
 function App(){
   const [username, setUsername] = useState("");
@@ -47,6 +49,10 @@ function App(){
     setIsLoggedIn(false);
     setOffers([]);
   };
+
+
+  const [activeTab, setActiveTab] = useState<'offers' | 'crm'>('offers');
+
   return (
       <div style={{ maxWidth: '900px', margin: '40px auto', fontFamily: 'sans-serif' }}>
         <h1>System Ofertowania B2B</h1>
@@ -70,9 +76,26 @@ function App(){
         ) : (
             <div>
               <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+                <button
+                    className={`tab-btn ${activeTab === 'offers' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('offers')}
+                >
+                  📋 Oferty i Kreator
+                </button>
+                <button
+                    className={`tab-btn ${activeTab === 'crm' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('crm')}
+                >
+                  🏢 Baza CRM (Firmy i Klienci)
+                </button>
                 <button onClick={handleLoadOffers}>Odśwież listę ofert z Django</button>
                 <button onClick={handleLogout}>Wyloguj</button>
               </div>
+              {activeTab === 'crm' ? (
+                  <CrmPanel />
+              ) : (
+                  <>
+              <OfferForm onOfferCreated={handleLoadOffers} />
               <table border={1} cellPadding={10} style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                 <tr>
@@ -95,8 +118,10 @@ function App(){
                 ))}
                 </tbody>
               </table>
+                  </>
+                  )}
             </div>
-        )}
+            )}
       </div>
   );
 }
