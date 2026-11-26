@@ -1,4 +1,4 @@
-import { useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import type {Company, Seller, Client} from "../types/offer.ts";
 import {
     fetchClients,
@@ -11,8 +11,8 @@ import {
 
 export function CrmPanel() {
     //Lista z bazy
-    const [clients, setClient] = useState<Client[]>([]);
-    const [sellers, setSellers] = useState<Seller[]>([]);
+    const [client, setClient] = useState<Client[]>([]);
+    const [seller, setSellers] = useState<Seller[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [message, setMessage] = useState("");
 
@@ -119,7 +119,7 @@ export function CrmPanel() {
                         <label>Adres</label>
                         <input value={sellerAddress} onChange={(e) => setSellerAddress(e.target.value)} required/>
                     </div>
-                    <button type="submit">+ Dodaj Wystawcę ({sellers.length})</button>
+                    <button type="submit">+ Dodaj Wystawcę</button>
                 </form>
                 {/* 2. FIRMY KONTRAHENTÓW */}
                 <form onSubmit={handleAddCompany}>
@@ -136,7 +136,7 @@ export function CrmPanel() {
                         <label>Adres</label>
                         <input value={compAddress} onChange={(e) => setCompAddress(e.target.value)} required/>
                     </div>
-                    <button type="submit">+ Dodaj Firmę ({companies.length})</button>
+                    <button type="submit">+ Dodaj Firmę</button>
                 </form>
                 {/* 3. OSOBY KONTAKTOWE (KLIENCI) */}
                 <form onSubmit={handleAddClient}>
@@ -163,7 +163,7 @@ export function CrmPanel() {
                         <label>Email</label>
                         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required/>
                     </div>
-                    <button type="submit">+ Dodaj Klienta ({clients.length})</button>
+                    <button type="submit">+ Dodaj Klienta</button>
                 </form>
             </div>
         </div>

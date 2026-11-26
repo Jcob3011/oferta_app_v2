@@ -1,11 +1,11 @@
-export interface Company{
+export interface Company {
     id: number;
     name: string;
     nip: string;
     address: string;
 }
 
-export interface OfferItem{
+export interface OfferItem {
     id?: number;
     description?: string;
     quantity: number;
@@ -40,6 +40,8 @@ export interface Offer {
     offer_number: string;
     seller: number;
     client: number;
+    seller_name?: string;
+    client_name?: string;
     status: 'draft' | 'pending' | 'consultation' | 'approved' | 'sent' | 'rejected';
     description: string | null;
     total_price: string;
@@ -53,5 +55,4 @@ export interface Offer {
     created_at: string;
     valid_until_date: string | null;
     items: OfferItem[];
-
 }

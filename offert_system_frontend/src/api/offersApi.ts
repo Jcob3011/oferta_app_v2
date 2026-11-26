@@ -63,7 +63,7 @@ export const createClient = async (data: {
     return response.data;
 };
 
-export const createSeller = async(data: {
+export const createSeller = async (data: {
     name: string;
     nip: string;
     address: string;
@@ -82,8 +82,8 @@ export const createOfferItem = async (data: {
     description: string;
     quantity: number;
     price_per_unit: string;
-}):Promise<OfferItem[]> => {
-    const response = await apiClient.post<OfferItem[]>('offer-item/', data);
+}): Promise<OfferItem[]> => {
+    const response = await apiClient.post<OfferItem[]>('offer-items/', data);
     return response.data;
 }
 
@@ -91,8 +91,16 @@ export const changeOfferStatus = async (
     offerId: number,
     action: 'submit' | 'consult' | 'approve' | 'reject' | 'return_to_draft',
     rejectionReason?: string
-):Promise<void> => {
+): Promise<void> => {
     await apiClient.post(`offers/${offerId}/${action}/`, {
-        rejection_reason : rejectionReason
+        rejection_reason: rejectionReason
     });
+};
+
+// --- INTEGRACJA Z ZEWNĘTRZNYM API NBP (Kursy Walut EUR i USD) ---
+export const fetchNbpRate = async (currency: 'eur' | 'usd'): Promise<number> => {
+    const response = await fetch(`https://api.nbp.pl/api/exchangerates/rates/a/${currency}/?format=json`
+    );
+    const data = await response.json();
+    return data.rates[0].mid;
 };
